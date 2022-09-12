@@ -661,23 +661,22 @@ int
 procinfo(uint64 addr)
 {
   ;struct uproc{ // Call variable of uproc to access info of uproc
-  int pid;
-  enum procstate state;
-  uint64 size;
-  int ppid;
-  char name[16];
+  int pid; 		// Process id
+  enum procstate state; // Process state
+  uint64 size; 		// Process size
+  int ppid; 		// Parent process id
+  char name[16]; 	// Process names
   };
-  
   struct proc *currProc = myproc(); // Current process, pointer to the pagetable
   struct proc *p; // Pointer to process
   struct uproc u; // Variable access to uproc content
-  int procCount = 0;
+  int procCount = 0; // Process count
   
   // Iterating through processes
   for (p = proc; p < &proc[NPROC]; p++){
     if (p->state == UNUSED) // Edge case
       continue;
-    if (p->state >= 0)
+    if (p->state >= 0) 
       procCount++; // Increment processes count when processes found
     
     // Save every process found to uproc 
@@ -686,7 +685,7 @@ procinfo(uint64 addr)
     u.size = p->sz;  // Save the size of the process to uproc
     
     if (p->parent)//{ // Retreiving the parent process id 
-      u.ppid = p->parent->pid; // Save parent procces id to uproc
+      u.ppid = p->parent->pid; // Save parent procces id to uproc, giving new value to pid as ppid
     
     for (int i = 0; i < 16; i++){ // Iterate through every name in array
       u.name[i] = p->name[i]; // Save the name of the process to uproc
