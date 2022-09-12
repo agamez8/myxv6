@@ -95,3 +95,15 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// Method added for lab 1
+// Functions gets arguments from other kernel helper functions to get processes info
+uint64
+sys_getprocs(void)
+{
+   uint64 ptr; 
+   
+   if(argaddr(0, &ptr) < 0) // Argument to pointer check
+     return -1;
+   return procinfo(ptr); // Return function with pointer
+}

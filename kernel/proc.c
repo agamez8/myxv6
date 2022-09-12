@@ -654,3 +654,45 @@ procdump(void)
     printf("\n");
   }
 }
+
+// Method added for lab 1, helper function to getprocs()
+// Function will return processes information
+int
+procinfo(uint64 addr)
+{
+  ;struct uproc{ // Call variable of uproc to access info of uproc
+  int pid;
+  enum procstate state;
+  uint64 size;
+  int ppid;
+  char name[16];
+  };
+  
+  struct proc *currProc = myproc(); // Current process, pointer to the pagetable
+  struct proc *p; // Pointer to process
+  struct uproc u; // Variable access to uproc content
+  int procCount = 0;
+  
+  // Iterating through processes
+  for (p = proc; p < &proc[NPROC]; p++){
+    if (p->state == UNUSED) // Edge case
+      continue;
+    if (p->state >= 0)
+      procCount++; // Increment processes count when processes found
+    
+    // Save every process found to uproc 
+    u.pid = p->pid; // Save the process id to uproc
+    u.state = p->state; // Save process state to uproc
+    u.size = p->sz;  // Save the size of the process to uproc
+    
+    if (p->parent)//{ // Retreiving the parent process id 
+      u.ppid = p->parent->pid; // Save parent procces id to uproc
+    
+    for (int i = 0; i < 16; i++){ // Iterate through every name in array
+      u.name[i] = p->name[i]; // Save the name of the process to uproc
+    }
+    copyout(currProc->pagetable, addr, (char *)&u, sizeof(u) < 0); // Copy the information to user space
+    addr += sizeof(struct uproc); // Address space determined by size of uproc
+  }
+  return procCount; // Return processes count
+}
