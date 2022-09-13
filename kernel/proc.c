@@ -656,18 +656,18 @@ procdump(void)
 }
 
 // Method added for lab 1, helper function to getprocs()
-// Function will return processes information
+// Function will receive an address & return all processes information
 int
 procinfo(uint64 addr)
 {
-  ;struct uproc{ // Call variable of uproc to access info of uproc
+  ;struct uproc{ 	// Call variable of uproc to access info of uproc
   int pid; 		// Process id
   enum procstate state; // Process state
   uint64 size; 		// Process size
   int ppid; 		// Parent process id
   char name[16]; 	// Process names
   };
-  struct proc *currProc = myproc(); // Current process, pointer to the pagetable
+  struct proc *currProc = myproc(); // Current process, pointer to the pagetable, myproc();
   struct proc *p; // Pointer to process
   struct uproc u; // Variable access to uproc content
   int procCount = 0; // Process count

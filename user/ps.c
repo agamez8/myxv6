@@ -36,8 +36,14 @@ main(int argc, char **argv)
    *********************************/ 
    
   // Display all processes information
+  char *state;
   printf("pid\tstate\tsize\tppid\tname\n"); // Category display
-  for (u = uproc; u < &uproc[NPROC]; u++){
+  for (u = uproc; u < &uproc[NPROC]; u++){ // Iterate to find every process in the uproc space
+    if (u->state == UNUSED)
+      continue;
+    if(u->state >= 0 && u->state < NELEM(states) && states[u->state])
+      state = states[u->state];
+    else
    // Display processes info in order
    printf("%d\t%s\t%d\t%d\t%s\n", u->pid, states[u->state], u->size, u->ppid, u->name);
   }
