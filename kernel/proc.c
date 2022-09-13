@@ -674,24 +674,22 @@ procinfo(uint64 addr)
   
   // Iterating through processes
   for (p = proc; p < &proc[NPROC]; p++){
-    if (p->state == UNUSED) // Edge case
-      continue;
-    if (p->state >= 0) 
-      procCount++; // Increment processes count when processes found
-    
-    // Save every process found to uproc 
-    u.pid = p->pid; // Save the process id to uproc
-    u.state = p->state; // Save process state to uproc
-    u.size = p->sz;  // Save the size of the process to uproc
-    
-    if (p->parent)//{ // Retreiving the parent process id 
+    if (p->state != UNUSED){ // Edge case
+      // Save every process found to uproc 
+      u.pid = p->pid; // Save the process id to uproc
+      u.state = p->state; // Save process state to uproc
+      u.size = p->sz; // Save the size of the process to uproc
+
+      if (p->parent) // Retreiving the parent process id 
       u.ppid = p->parent->pid; // Save parent procces id to uproc, giving new value to pid as ppid
-    
-    for (int i = 0; i < 16; i++){ // Iterate through every name in array
+
+      for (int i = 0; i < 16; i++){ // Iterate through every name in array
       u.name[i] = p->name[i]; // Save the name of the process to uproc
+      }
+      procCount++; // Increment process count when processes found
+      copyout(currProc->pagetable, addr, (char *)&u, sizeof(u)); // Copy the information to user space
     }
-    copyout(currProc->pagetable, addr, (char *)&u, sizeof(u) < 0); // Copy the information to user space
-    addr += sizeof(struct uproc); // Address space determined by size of uproc
+    addr = addr + sizeof(u); // Address space determined by size of uproc processes
   }
   return procCount; // Return processes count
 }
