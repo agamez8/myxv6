@@ -661,11 +661,12 @@ int
 procinfo(uint64 addr)
 {
   ;struct uproc{ 	// Call variable of uproc to access info of uproc
-  int pid; 		// Process id
+  int pid; // Process id
   enum procstate state; // Process state
-  uint64 size; 		// Process size
-  int ppid; 		// Parent process id
-  char name[16]; 	// Process names
+  uint64 size; // Process size
+  int cputime; // CPU time 
+  int ppid; // Parent process id
+  char name[16]; // Process names
   };
   struct proc *currProc = myproc(); // Current process, pointer to the pagetable, myproc();
   struct proc *p; // Pointer to process

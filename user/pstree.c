@@ -10,10 +10,26 @@ int nprocs;
 // calls itself recursively on any children of pid
 void mktree(int indent, int pid)
 {
-  if (pid > NPROC)
-    continue;
-  printf(pid);
-  
+  struct uproc *u; // Pointer to uproc processes
+  int count; // Indentation count
+
+  for (u = uproc; u < &uproc[NPROC]; u++){ // Iterate through processes
+    count = indent; // Set count to increment indentation
+
+    if (count == 0 && u->pid == pid){ // Save process id to uproc
+      printf("(%d)%s\n", u->pid, u->name); // Display pid and name of process
+      mktree(count+=1, pid); // Indent for every process found
+    }
+
+    if (u->ppid == pid){ // Indentation to show child processes
+      if (count > 0){ // Several processes found
+        printf("--"); // Add branch to trees processes, indentation
+        count-=1; // Stop indentation
+      }
+      printf("(%d)%s\n", u->pid, u->name); 
+      mktree(count+=1, u->pid);
+    }
+  }
   return;
 }
 
@@ -28,7 +44,7 @@ main(int argc, char **argv)
     exit(-1);
 
   // You can remove the following print statement
-  printf("%d processes\n", nprocs);
+  //printf("%d processes\n", nprocs);
 
   mktree(0, pid);
   exit(0);

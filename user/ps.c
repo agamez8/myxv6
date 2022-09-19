@@ -36,10 +36,10 @@ main(int argc, char **argv)
    *********************************/ 
    
   // Display all processes information
-  printf("pid\tstate\tsize\tppid\tname\n"); // Category display
+  printf("pid\tstate\tsize\tcputime\tppid\tname\n"); // Category display
   for (u = uproc; u < &uproc[nprocs]; u++){ // Iterate to find every process in the uproc
    // Display processes info in order
-   printf("%d\t%s\t%d\t%d\t%s\n", u->pid, states[u->state], u->size, u->ppid, u->name);
+   printf("%d\t%s\t%d\t%d\t%d\t%s\n", u->pid, states[u->state], u->size, u->cputime, u->ppid, u->name);
   }
   exit(0);
 }
