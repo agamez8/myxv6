@@ -18,7 +18,7 @@ void mktree(int indent, int pid)
 
     if (count == 0 && u->pid == pid){ // Save process id to uproc
       printf("(%d)%s\n", u->pid, u->name); // Display pid and name of process
-      mktree(count+=1, pid); // Indent for every process found
+      mktree(count+=1, pid); // Indent, call itself for any child of pid
     }
 
     if (u->ppid == pid){ // Indentation to show child processes
@@ -26,11 +26,10 @@ void mktree(int indent, int pid)
         printf("--"); // Add branch to trees processes, indentation
         count-=1; // Stop indentation
       }
-      printf("(%d)%s\n", u->pid, u->name); 
-      mktree(count+=1, u->pid);
+      printf("(%d)%s\n", u->pid, u->name); // Display pid and name of process
+      mktree(count+=1, u->pid); // Indentation to show tree branching
     }
   }
-  return;
 }
 
 int
