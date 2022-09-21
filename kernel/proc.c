@@ -119,6 +119,7 @@ allocproc(void)
 found:
   p->pid = allocpid();
   p->state = USED;
+  p->cputime = 0;
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -660,11 +661,12 @@ procdump(void)
 int
 procinfo(uint64 addr)
 {
-  ;struct uproc{ 	// Call variable of uproc to access info of uproc
+  ;struct uproc{ // Call variable of uproc to access info of uproc
   int pid; // Process id
   enum procstate state; // Process state
   uint64 size; // Process size
-  int cputime; // CPU time 
+  uint cputime; // CPU time
+  uint arrtime; // Arrival time 
   int ppid; // Parent process id
   char name[16]; // Process names
   };
@@ -680,6 +682,8 @@ procinfo(uint64 addr)
       u.pid = p->pid; // Save the process id to uproc
       u.state = p->state; // Save process state to uproc
       u.size = p->sz; // Save the size of the process to uproc
+      u.cputime = p->cputime; // Save cputime to uproc
+      u.arrtime = p->arrtime; // Save arrival time to uproc
 
       if (p->parent) // Retreiving the parent process id 
       u.ppid = p->parent->pid; // Save parent procces id to uproc, giving new value to pid as ppid
