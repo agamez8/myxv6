@@ -101,9 +101,20 @@ sys_uptime(void)
 uint64
 sys_getprocs(void)
 {
-   uint64 ptr; 
+   uint64 addr; 
    
-   if(argaddr(0, &ptr) < 0) // Argument to pointer check
+   if(argaddr(0, &addr) < 0) // Argument to pointer check
      return -1;
-   return procinfo(ptr); // Return function with pointer
+   return procinfo(addr); // Return function with pointer
+}
+
+// Method added for lab 2
+uint64
+sys_wait2(void)
+{
+   uint64 i1, i2; 
+   
+   if(argaddr(0, &i1) < 0 || argaddr(1, &i2) < 0) // Argument to pointer check
+     return -1;
+   return wait2(i1, i2); // Return function with pointers
 }

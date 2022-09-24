@@ -80,7 +80,7 @@ struct trapframe {
   /* 280 */ uint64 t6;
 };
 
-enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+//enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 // Per-process state
 struct proc {
@@ -93,8 +93,7 @@ struct proc {
   int xstate;                  // Exit status to be returned to parent's wait
   int pid;                     // Process ID
   uint arrtime;                // Arrival time (in ticks)
-  uint cputime;		             // CPU time for process
-  uint tsticks;                // Ticks accumulated in current time slice
+  uint cputime;		             // CPUtime for process
 
   // wait_lock must be held when using this:
   struct proc *parent;         // Parent process

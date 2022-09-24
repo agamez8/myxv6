@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "pstat.h"
 
 struct cpu cpus[NCPU];
 
@@ -428,6 +429,55 @@ wait(uint64 addr)
   }
 }
 
+int
+wait2(uint64 addr, uint64 rusage)
+{
+  struct proc *np;
+  int havekids, pid;
+  struct proc *p = myproc();
+  struct pstat pstat;
+
+  acquire(&wait_lock);
+
+  for(;;){
+    // Scan through table looking for exited children.
+    havekids = 0;
+    for(np = proc; np < &proc[NPROC]; np++){
+      if(np->parent == p){
+        // make sure the child isn't still in exit() or swtch().
+        acquire(&np->lock);
+
+        havekids = 1;
+        if(np->state == ZOMBIE){
+          // Found one.
+          pid = np->pid;
+          copyout(p->pagetable, rusage, (char *)&pstat, sizeof(pstat));
+          if(addr != 0 && copyout(p->pagetable, addr, (char *)&np->xstate,
+                                  sizeof(np->xstate)) < 0) {
+            release(&np->lock);
+            release(&wait_lock);
+            return -1;
+          }
+          freeproc(np);
+          release(&np->lock);
+          release(&wait_lock);
+          return pid;
+        }
+        release(&np->lock);
+      }
+    }
+
+    // No point waiting if we don't have any children.
+    if(!havekids || p->killed){
+      release(&wait_lock);
+      return -1;
+    }
+    
+    // Wait for a child to exit.
+    sleep(p, &wait_lock);  //DOC: wait-sleep
+  }
+}
+
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -661,39 +711,32 @@ procdump(void)
 int
 procinfo(uint64 addr)
 {
-  ;struct uproc{ // Call variable of uproc to access info of uproc
-  int pid; // Process id
-  enum procstate state; // Process state
-  uint64 size; // Process size
-  uint cputime; // CPU time
-  uint arrtime; // Arrival time 
-  int ppid; // Parent process id
-  char name[16]; // Process names
-  };
   struct proc *currProc = myproc(); // Current process, pointer to the pagetable, myproc();
   struct proc *p; // Pointer to process
-  struct uproc u; // Variable access to uproc content
+  struct pstat u; // Variable access to uproc content
   int procCount = 0; // Process count
   
   // Iterating through processes
   for (p = proc; p < &proc[NPROC]; p++){
-    if (p->state != UNUSED){ // Edge case
-      // Save every process found to uproc 
-      u.pid = p->pid; // Save the process id to uproc
-      u.state = p->state; // Save process state to uproc
-      u.size = p->sz; // Save the size of the process to uproc
-      u.cputime = p->cputime; // Save cputime to uproc
-      u.arrtime = p->arrtime; // Save arrival time to uproc
+    if (p->state == UNUSED)
+      continue;
+    // Save every process found to uproc 
+    procCount++;
+    u.pid = p->pid; // Save the process id to uproc
+    u.state = p->state; // Save process state to uproc
+    u.size = p->sz; // Save the size of the process to uproc
+    u.cputime = p->cputime; // Save cputime to uproc
+    u.arrtime = p->arrtime; // Save arrival time to uproc
 
-      if (p->parent) // Retreiving the parent process id 
-      u.ppid = p->parent->pid; // Save parent procces id to uproc, giving new value to pid as ppid
+    if (p->parent) // Retreiving the parent process id 
+      u.ppid = (p->parent)->pid; // Save parent procces id to uproc, giving new value to pid as ppid
+    else
+      u.ppid = 0;
 
-      for (int i = 0; i < 16; i++){ // Iterate through every name in array
+    for (int i = 0; i < 16; i++) // Iterate through every name in array
       u.name[i] = p->name[i]; // Save the name of the process to uproc
-      }
-      procCount++; // Increment process count when processes found
-      copyout(currProc->pagetable, addr, (char *)&u, sizeof(u)); // Copy the information to user space
-    }
+
+    copyout(currProc->pagetable, addr, (char *)&u, sizeof(u)); // Copy the information to user space
     addr = addr + sizeof(u); // Address space determined by size of uproc processes
   }
   return procCount; // Return processes count

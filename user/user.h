@@ -1,6 +1,7 @@
 struct stat;
 struct rtcdate;
-struct uproc;
+struct pstat;
+struct rusage; // added for lab 2
 
 // system calls
 int fork(void);
@@ -24,7 +25,8 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-int getprocs(struct uproc*); // added for lab 1
+int getprocs(struct pstat*); // added for lab 1
+int wait2(int*, struct rusage*); // added for lab 2
 
 // ulib.c
 int stat(const char*, struct stat*);

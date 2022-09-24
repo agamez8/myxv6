@@ -1,16 +1,16 @@
 #include "kernel/param.h"
 #include "kernel/types.h"
-#include "user/uproc.h"
+#include "kernel/pstat.h"
 #include "user/user.h"
 
-struct uproc uproc[NPROC];
+struct pstat uproc[NPROC];
 int nprocs;
 
 // helper function to output the process tree rooted at pid
 // calls itself recursively on any children of pid
 void mktree(int indent, int pid)
 {
-  struct uproc *u; // Pointer to uproc processes
+  struct pstat *u; // Pointer to uproc processes
   int count; // Indentation count
 
   for (u = uproc; u < &uproc[NPROC]; u++){ // Iterate through processes

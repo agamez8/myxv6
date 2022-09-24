@@ -1,32 +1,32 @@
 #include "kernel/param.h"
 #include "kernel/types.h"
-#include "user/uproc.h"
+#include "kernel/pstat.h"
 #include "user/user.h"
 
 int
 main(int argc, char **argv)
 {
-  struct uproc uproc[NPROC];
+  struct pstat uproc[NPROC];
   int nprocs;
 
   /********************************
    * Add any additional variables or data structures you will need
    ********************************/
    
-  struct uproc *u; // Pointer variable for uproc
+  struct pstat *u; // Pointer variable for uproc
   static char *states[] = { // Array of existing structs
-  [UNUSED]    "unused",
-  [SLEEPING]  "sleep ",
-  [RUNNABLE]  "runble",
-  [RUNNING]   "run   ",
-  [ZOMBIE]    "zombie"
+  [UNUSED]    "unused ",
+  [SLEEPING]  "sleep  ",
+  [RUNNABLE]  "runble ",
+  [RUNNING]   "run    ",
+  [ZOMBIE]    "zombie "
   }; 
   
   nprocs = getprocs(uproc);
   if (nprocs < 0)
     exit(-1);
   // You can remove the following print statement
-  // printf("%d processes\n", nprocs);
+  //printf("%d processes\n", nprocs);
 
   /*********************************
    * Add your code here to output information returned by getprocs()
