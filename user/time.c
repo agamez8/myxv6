@@ -12,9 +12,11 @@ main(int argc, char *argv[])
     	exit(0); // Exit program when error occurs
   	}
 
+	int starttime = uptime();
+	// printf("%d\n", starttime);
 	int pid = fork();
-	int elapsedtime = uptime();
-
+	struct rusage r;
+	// printf("%d\n", r.cputime);
 
   	if (pid < 0) {
   		exit(0);
@@ -24,14 +26,17 @@ main(int argc, char *argv[])
   		exec(argv[1], argv);
   		printf("exec() args failed\n");
   	} else {
-  		//wait2();
-  		int cputime = uptime();
-  		int cpuUsage = 100*cputime/elapsedtime;
-
-  		printf("elapsed time: %d ticks, cpu time: %dticks, %d CPU\n", elapsedtime, cputime, cpuUsage);
+  		//printf("%d\n", r.cputime);
+  		wait2(0, &r);
+  		//printf("%d\n", r.cputime);
+  		int elapsedtime = uptime() - starttime; // Turnaround time
+  		//printf("%d\n", elapsedtime);
+  		//printf("%d\n", starttime);
+  		int cpuUsage = 100*r.cputime/elapsedtime; // CPU usage
+  		printf("elapsed time: %d ticks, cpu time: %d ticks, %d% CPU\n", elapsedtime, r.cputime, cpuUsage);
   	}
 
-  	return 0;
+  	exit(0);
 }
 
 // %CPU = 100*cputime/elapsedtime

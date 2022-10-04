@@ -79,8 +79,14 @@ usertrap(void)
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2) {
     p->cputime++; // Increment CPU when timer interrupt occurs in user mode
+    p->tsticks++; // Update tsticks for every timer interrupt
     yield();
   }
+
+  // if(p->timeslice == 0) { // Check when timeslice is used up
+  //   p->tsticks++; // Update time ticks
+  //   yield(); 
+  // }
 
   usertrapret();
 }
@@ -154,8 +160,10 @@ kerneltrap()
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING) {
     myproc()->cputime++; // Increment CPU when timer interrupt occurs in kernel mode
+    myproc()->tsticks++; // Update tsticks for every timer interrupt
     yield();
   }
+
   
   // the yield() may have caused some traps to occur,
   // so restore trap registers for use by kernelvec.S's sepc instruction.

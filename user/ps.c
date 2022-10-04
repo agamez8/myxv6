@@ -8,13 +8,8 @@ main(int argc, char **argv)
 {
   struct pstat uproc[NPROC];
   int nprocs;
-
-  /********************************
-   * Add any additional variables or data structures you will need
-   ********************************/
-   
   struct pstat *u; // Pointer variable for uproc
-  static char *states[] = { // Array of existing structs
+  static char *states[] = { // Array of process states
   [UNUSED]    "unused ",
   [SLEEPING]  "sleep  ",
   [RUNNABLE]  "runble ",
@@ -23,17 +18,10 @@ main(int argc, char **argv)
   }; 
   
   nprocs = getprocs(uproc);
+
   if (nprocs < 0)
     exit(-1);
-  // You can remove the following print statement
   //printf("%d processes\n", nprocs);
-
-  /*********************************
-   * Add your code here to output information returned by getprocs()
-   * Hint: see procdump() code in kernel/console.c, except that here
-   * you will be outputting the first nprocs elements of the uproc array
-   * and all will have active states.
-   *********************************/ 
    
   // Display all processes information
   printf("pid\tstate\tsize\tcputime\tppid\tname\n"); // Category display

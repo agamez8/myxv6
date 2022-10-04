@@ -107,7 +107,10 @@ int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
 int				procinfo(uint64); // added for lab 1
 int 			wait2(uint64, uint64); // added for lab 2
- 
+void            queueinit(void); // added for lab 2
+int             queue_empty(int); // added for lab 2
+int             timeslice(int); // added for lab 2
+
 // swtch.S
 void            swtch(struct context*, struct context*);
 
