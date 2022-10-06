@@ -2,6 +2,7 @@
 #include "kernel/types.h"
 #include "kernel/pstat.h"
 #include "user/user.h"
+#define MAXARGS 16
 
 int 
 main(int argc, char *argv[])
@@ -12,31 +13,30 @@ main(int argc, char *argv[])
     	exit(0); // Exit program when error occurs
   	}
 
-	int starttime = uptime();
-	// printf("%d\n", starttime);
+	int starttime, elapsedtime;
 	int pid = fork();
 	struct rusage r;
-	// printf("%d\n", r.cputime);
+	char *newargv[MAXARGS];
+
+	for(int i = 1; i < argc; i++) {
+		newargv[i-1] = argv[i];
+	}
+	newargv[argc-1] = 0;
+
+	starttime = uptime();
 
   	if (pid < 0) {
   		exit(0);
   	}
 
   	if (pid == 0) {
-  		exec(argv[1], argv);
-  		printf("exec() args failed\n");
-  	} else {
-  		//printf("%d\n", r.cputime);
-  		wait2(0, &r);
-  		//printf("%d\n", r.cputime);
-  		int elapsedtime = uptime() - starttime; // Turnaround time
-  		//printf("%d\n", elapsedtime);
-  		//printf("%d\n", starttime);
-  		int cpuUsage = 100*r.cputime/elapsedtime; // CPU usage
-  		printf("elapsed time: %d ticks, cpu time: %d ticks, %d% CPU\n", elapsedtime, r.cputime, cpuUsage);
+  		exec(newargv[0], newargv);
   	}
-
-  	exit(0);
+	wait2(0, &r);
+	elapsedtime = uptime() - starttime;
+	int cpuUsage = 100*r.cputime/elapsedtime; // CPU usage
+	printf("elapsed time: %d ticks, cpu time: %d ticks, %d% CPU\n", elapsedtime, r.cputime, cpuUsage);
+	exit(0);
 }
 
 // %CPU = 100*cputime/elapsedtime

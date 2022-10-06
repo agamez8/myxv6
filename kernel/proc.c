@@ -15,13 +15,18 @@ struct proc *initproc;
 
 // Lab 2 MLFQ additions
 struct queue queue[NQUEUE];
-int sched_policy = MLFQ; // Should be set to RR or MLFQ
+int sched_policy = RR; // Should be set to RR or MLFQ
 
 int nextpid = 1;
 struct spinlock pid_lock;
 
 extern void forkret(void);
 static void freeproc(struct proc *p);
+
+// Declaration of functions
+static int enqueue_at_tail(struct proc *p, int priority);
+static int enqueue_at_head(struct proc *p, int priority);
+static struct proc* dequeue(int priority);
 
 extern char trampoline[]; // trampoline.S
 
@@ -253,7 +258,7 @@ userinit(void)
   p->cwd = namei("/");
 
   p->state = RUNNABLE;
-  enqueue_at_head(p, p->priority);
+  enqueue_at_tail(p, p->priority);
 
   release(&p->lock);
 }
@@ -324,6 +329,7 @@ fork(void)
 
   acquire(&np->lock);
   np->state = RUNNABLE;
+  enqueue_at_head(p, p->priority);
   release(&np->lock);
 
   return pid;
@@ -488,85 +494,6 @@ wait2(uint64 addr, uint64 rusage)
   }
 }
 
-// -------------------------------------------------------------------------------------------------------
-// Enqueues process p at the tail of the scheduler queue with priority == priority
-// p->lock should be held on entry
-static int
-enqueue_at_tail(struct proc *p, int priority)
-{
-  acquire(&queue[priority].lock);
-
-  if ((queue[priority].head == 0) && (queue[priority].tail == 0)) {
-    queue[priority].head = p;
-    queue[priority].tail = p;
-    release(&queue[priority].lock);
-    return(0);
-  }
-  if (queue[priority].tail == 0) {
-    release(&queue[priority].lock);
-    return(-1);
-  }
-  queue[priority].tail->next = p;
-  queue[priority].tail = p;
-  release(&queue[priority].lock);
-  return(0);
-}
-
-// Enqueues process p at the head of the scheduler queue with priority == priority
-// p->lock should be held on entry except for initial enqueue of init
-static int
-enqueue_at_head(struct proc *p, int priority)
-{
-  //printf("entered enqueue_at_head, pid = %d\n", p->pid);
-  acquire(&queue[priority].lock);
-  
-  if ((queue[priority].head == 0) && (queue[priority].tail == 0)) {
-    queue[priority].head = p;
-    queue[priority].tail = p;
-    release(&queue[priority].lock);
-    return(0);
-  }
-  if (queue[priority].head == 0) {
-    release(&queue[priority].lock);
-    return(-1);
-  }
-  p->next = queue[priority].head;
-  queue[priority].head = p;
-  release(&queue[priority].lock);
-  return(0);
-}
-
-// Dequeues and returns process at head of queue with priority == priority, or
-// returns 0 in the case of an empty queue
-static struct proc*
-dequeue(int priority)
-{
-  struct proc *p;
-  acquire(&queue[priority].lock);
-
-  if ((queue[priority].head == 0) && (queue[priority].tail == 0)) {
-    release(&queue[priority].lock);
-    return(0);
-  }
-  if (queue[priority].head == 0) {
-    printf("head of queue is null but tail is not null\n");
-    release(&queue[priority].lock);
-    return(0);
-  }
-
-  p = queue[priority].head;
-  acquire(&p->lock);
-  queue[priority].head = p->next;
-  p->next = 0;
-  release(&p->lock);
-
-  if (!queue[priority].head)
-    queue[priority].tail = 0;
-  release(&queue[priority].lock);
-  return(p);
-}
-// -------------------------------------------------------------------------------------------------------
-
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -583,9 +510,10 @@ scheduler(void)
   c->proc = 0;
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
-    intr_on();
+    // intr_on();
 
     if (sched_policy == RR) { 
+      intr_on();
       for(p = proc; p < &proc[NPROC]; p++) {
         acquire(&p->lock);
         if(p->state == RUNNABLE) {
@@ -605,16 +533,48 @@ scheduler(void)
       }
     } else if (sched_policy == MLFQ) {
       struct proc *p;
-      p = dequeue(HIGH);
+      p = dequeue(HIGH); // high
       if (!p)
-        p = dequeue(MEDIUM);
+        p = dequeue(MEDIUM); // medium
       if (!p)
-        p = dequeue(LOW);
+        p = dequeue(LOW); // low
       if (p)
         p = dequeue(HIGH);
     }
   }
 }
+
+// --------------------------------------------------------------------------------------------
+// void
+// scheduler(void)
+// {
+//   struct proc *p;
+//   struct cpu *c = mycpu();
+  
+//   c->proc = 0;
+//   for(;;){
+//     // Avoid deadlock by ensuring that devices can interrupt.
+//     intr_on();
+
+//     for(p = proc; p < &proc[NPROC]; p++) {
+//       acquire(&p->lock);
+//       if(p->state == RUNNABLE) {
+//         // Switch to chosen process.  It is the process's job
+//         // to release its lock and then reacquire it
+//         // before jumping back to us.
+//         p->state = RUNNING;
+//         c->proc = p;
+//         swtch(&c->context, &p->context);
+
+//         // Process is done running for now.
+//         // It should have changed its p->state before coming back.
+//         c->proc = 0;
+//       }
+//       release(&p->lock);
+//     }
+//   }
+// }
+// --------------------------------------------------------------------------------------------
 
 // Switch to scheduler.  Must hold only p->lock
 // and have changed proc->state. Saves and restores
@@ -650,6 +610,7 @@ yield(void)
   struct proc *p = myproc();
   acquire(&p->lock);
   p->state = RUNNABLE;
+  enqueue_at_tail(p, p->priority);
   sched();
   release(&p->lock);
 }
@@ -740,7 +701,7 @@ kill(int pid)
       if(p->state == SLEEPING){
         // Wake process from sleep().
         p->state = RUNNABLE;
-        enqueue_at_head(p, p->priority);
+        enqueue_at_tail(p, p->priority);
       }
       release(&p->lock);
       return 0;
@@ -902,79 +863,82 @@ queue_empty(int priority)
   return(0);
 }
 
-// // Enqueues process p at the tail of the scheduler queue with priority == priority
-// // p->lock should be held on entry
-// static int
-// enqueue_at_tail(struct proc *p, int priority)
-// {
-//   acquire(&queue[priority].lock);
+// -------------------------------------------------------------------------------------------------------
+// Enqueues process p at the tail of the scheduler queue with priority == priority
+// p->lock should be held on entry
+static int
+enqueue_at_tail(struct proc *p, int priority)
+{
+  acquire(&queue[priority].lock);
 
-//   if ((queue[priority].head == 0) && (queue[priority].tail == 0)) {
-//     queue[priority].head = p;
-//     queue[priority].tail = p;
-//     release(&queue[priority].lock);
-//     return(0);
-//   }
-//   if (queue[priority].tail == 0) {
-//     release(&queue[priority].lock);
-//     return(-1);
-//   }
-//   queue[priority].tail->next = p;
-//   queue[priority].tail = p;
-//   release(&queue[priority].lock);
-//   return(0);
-// }
+  if ((queue[priority].head == 0) && (queue[priority].tail == 0)) {
+    queue[priority].head = p;
+    queue[priority].tail = p;
+    release(&queue[priority].lock);
+    return(0);
+  }
+  if (queue[priority].tail == 0) {
+    release(&queue[priority].lock);
+    return(-1);
+  }
+  queue[priority].tail->next = p;
+  queue[priority].tail = p;
+  release(&queue[priority].lock);
+  return(0);
+}
 
-// // Enqueues process p at the head of the scheduler queue with priority == priority
-// // p->lock should be held on entry except for initial enqueue of init
-// static int
-// enqueue_at_head(struct proc *p, int priority)
-// {
-//   //printf("entered enqueue_at_head, pid = %d\n", p->pid);
-//   acquire(&queue[priority].lock);
+// Enqueues process p at the head of the scheduler queue with priority == priority
+// p->lock should be held on entry except for initial enqueue of init
+static int
+enqueue_at_head(struct proc *p, int priority)
+{
+  //printf("entered enqueue_at_head, pid = %d\n", p->pid);
+  acquire(&queue[priority].lock);
   
-//   if ((queue[priority].head == 0) && (queue[priority].tail == 0)) {
-//     queue[priority].head = p;
-//     queue[priority].tail = p;
-//     release(&queue[priority].lock);
-//     return(0);
-//   }
-//   if (queue[priority].head == 0) {
-//     release(&queue[priority].lock);
-//     return(-1);
-//   }
-//   p->next = queue[priority].head;
-//   queue[priority].head = p;
-//   release(&queue[priority].lock);
-//   return(0);
-// }
+  if ((queue[priority].head == 0) && (queue[priority].tail == 0)) {
+    queue[priority].head = p;
+    queue[priority].tail = p;
+    release(&queue[priority].lock);
+    return(0);
+  }
+  if (queue[priority].head == 0) {
+    release(&queue[priority].lock);
+    return(-1);
+  }
+  p->next = queue[priority].head;
+  queue[priority].head = p;
+  release(&queue[priority].lock);
+  return(0);
+}
 
-// // Dequeues and returns process at head of queue with priority == priority, or
-// // returns 0 in the case of an empty queue
-// static struct proc*
-// dequeue(int priority)
-// {
-//   struct proc *p;
-//   acquire(&queue[priority].lock);
+// Dequeues and returns process at head of queue with priority == priority, or
+// returns 0 in the case of an empty queue
+static struct proc*
+dequeue(int priority)
+{
+  struct proc *p;
+  acquire(&queue[priority].lock);
 
-//   if ((queue[priority].head == 0) && (queue[priority].tail == 0)) {
-//     release(&queue[priority].lock);
-//     return(0);
-//   }
-//   if (queue[priority].head == 0) {
-//     printf("head of queue is null but tail is not null\n");
-//     release(&queue[priority].lock);
-//     return(0);
-//   }
+  if ((queue[priority].head == 0) && (queue[priority].tail == 0)) {
+    release(&queue[priority].lock);
+    return(0);
+  }
+  if (queue[priority].head == 0) {
+    printf("head of queue is null but tail is not null\n");
+    release(&queue[priority].lock);
+    return(0);
+  }
 
-//   p = queue[priority].head;
-//   acquire(&p->lock);
-//   queue[priority].head = p->next;
-//   p->next = 0;
-//   release(&p->lock);
+  p = queue[priority].head;
+  acquire(&p->lock);
+  queue[priority].head = p->next;
+  p->next = 0;
+  release(&p->lock);
 
-//   if (!queue[priority].head)
-//     queue[priority].tail = 0;
-//   release(&queue[priority].lock);
-//   return(p);
-// }
+  if (!queue[priority].head)
+    queue[priority].tail = 0;
+  release(&queue[priority].lock);
+  return(p);
+}
+
+// -------------------------------------------------------------------------------------------------------
