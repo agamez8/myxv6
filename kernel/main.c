@@ -21,6 +21,7 @@ main()
     kvminithart();   // turn on paging
     procinit();      // process table
     queueinit();     // process queue
+    mmrlistinit();   // initialize mmr_list
     trapinit();      // trap vectors
     trapinithart();  // install kernel trap vector
     plicinit();      // set up interrupt controller

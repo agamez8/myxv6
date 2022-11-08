@@ -106,10 +106,16 @@ int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
 int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
 int				procinfo(uint64); // added for lab 1
+///////////////////////////////////////////////////////////////////////////
 int 			wait2(uint64, uint64); // added for lab 2
 void            queueinit(void); // added for lab 2
 int             queue_empty(int); // added for lab 2
 int             timeslice(int); // added for lab 2
+///////////////////////////////////////////////////////////////////////////
+struct 			mmr_list* get_mmr_list(int); // added for lab 3
+int 			alloc_mmr_listid(void); // added for lab 3
+void 			dealloc_mmr_listid(int); // added for lab 3
+void 			mmrlistinit(void); // added for lab 3
 
 // swtch.S
 void            swtch(struct context*, struct context*);
@@ -176,6 +182,9 @@ uint64          walkaddr(pagetable_t, uint64);
 int             copyout(pagetable_t, uint64, char *, uint64);
 int             copyin(pagetable_t, char *, uint64, uint64);
 int             copyinstr(pagetable_t, char *, uint64, uint64);
+int 			mapvpages(pagetable_t, uint64, uint64);
+// int 			uvmcopy(pagetable_t, pagetable_t, uint64, uint64);
+int 			uvmcopyshared(pagetable_t, pagetable_t, uint64, uint64);
 
 // plic.c
 void            plicinit(void);
@@ -187,6 +196,12 @@ void            plic_complete(int);
 void            virtio_disk_init(void);
 void            virtio_disk_rw(struct buf *, int);
 void            virtio_disk_intr(void);
+
+// lab 3
+int 			freepmem(void); // added for lab 3
+int 			kfreepagecount(void); // added for lab 3
+int 			mmap(void); // lab 3
+int 			munmap(uint64, uint64); // lab 3
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

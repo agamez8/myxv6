@@ -80,3 +80,25 @@ kalloc(void)
     memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
 }
+
+// Helper method for freepmem() Lab 3
+// Traverses kmem.freelist and counts pages on freelist
+int 
+kfreepagecount()
+{
+  // implement
+  struct run *r;
+
+  acquire(&kmem.lock);
+  r = kmem.freelist;
+  int pageCount = 0;
+
+  while (r)
+  {
+    pageCount+=PGSIZE;
+    r = r->next;
+  }
+  release(&kmem.lock);
+
+  return pageCount;
+}

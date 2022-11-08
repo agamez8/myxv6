@@ -23,4 +23,7 @@
 #define MLFQ 			1 // 0 for RR, 1 for MLFQ
 #define RR 				0
 
+// Lab 3 additions
+#define MAX_MMR 10 // maximum number of memory-mapped regions per process
+
 enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };

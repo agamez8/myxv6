@@ -22,3 +22,6 @@
 #define SYS_close  21
 #define SYS_getprocs 22 // added for lab 1
 #define SYS_wait2  23 // added for lab 2
+#define SYS_freepmem 24 // added for lab 3
+#define SYS_mmap   25
+#define SYS_munmap 26

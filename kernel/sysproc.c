@@ -118,3 +118,10 @@ sys_wait2(void)
      return -1;
    return wait2(i1, i2); // Return function with pointers
 }
+
+// Method added for lab 3
+uint64
+sys_freepmem(void)
+{
+  return kfreepagecount();
+}

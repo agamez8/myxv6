@@ -38,3 +38,6 @@ entry("sleep");
 entry("uptime");
 entry("getprocs"); # added for lab 1
 entry("wait2"); # added for lab 2
+entry("freepmem"); # added for lab 3
+entry("mmap"); # added for lab 3
+entry("munmap"); # added for lab 3

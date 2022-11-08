@@ -106,6 +106,9 @@ extern uint64 sys_write(void);
 extern uint64 sys_uptime(void);
 extern uint64 sys_getprocs(void); // added for lab 1
 extern uint64 sys_wait2(void); // added for lab 2
+extern uint64 sys_freepmem(void); // added for lab 3
+extern uint64 sys_mmap(void); // added for lab 3
+extern uint64 sys_munmap(void); // added for lab 3
 
 static uint64 (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -131,6 +134,9 @@ static uint64 (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_getprocs]   sys_getprocs, // added for lab 1
 [SYS_wait2]   sys_wait2, // added for lab 2   
+[SYS_freepmem]   sys_freepmem, // added for lab 3
+[SYS_wait2]   sys_mmap, // added for lab 3   
+[SYS_freepmem]   sys_munmap, // added for lab 3
 };
 
 void
