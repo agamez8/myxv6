@@ -140,7 +140,9 @@ UPROGS=\
 	$U/_time\
 	$U/_free\
 	$U/_private\
-
+# 	$U/_mmap\
+# 	$U/_munmap\
+	
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
 

@@ -135,8 +135,8 @@ static uint64 (*syscalls[])(void) = {
 [SYS_getprocs]   sys_getprocs, // added for lab 1
 [SYS_wait2]   sys_wait2, // added for lab 2   
 [SYS_freepmem]   sys_freepmem, // added for lab 3
-[SYS_wait2]   sys_mmap, // added for lab 3   
-[SYS_freepmem]   sys_munmap, // added for lab 3
+[SYS_mmap]   sys_mmap, // added for lab 3   
+[SYS_munmap]   sys_munmap, // added for lab 3
 };
 
 void

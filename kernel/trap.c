@@ -63,6 +63,30 @@ usertrap(void)
     intr_on();
 
     syscall();
+  } 
+  else if(r_scause() == 13 || r_scause() == 15){
+    int faultAddr = r_stval();
+    int i;
+
+    for(i = 0; i < MAX_MMR; i++){
+      if((faultAddr >= p->mmr[i].addr) && (faultAddr < (p->mmr[i].addr + p->mmr[i].length))){
+        if (r_scause() == 13 && (p->mmr[i].prot & PTE_R)){
+          void *physAddr = kalloc();
+          memset(physAddr, 0, PGSIZE);
+
+          if (mappages(p->pagetable, PGROUNDDOWN(faultAddr), PGSIZE, (uint64)physAddr, p->mmr[i].prot | PTE_U) < 0){
+            panic("could not allocate");
+          } 
+        }else if (r_scause() == 15 && (p->mmr[i].prot && PTE_W)) {
+          void *physAddr = kalloc();
+          memset(physAddr, 0, PGSIZE);
+
+          if (mappages(p->pagetable, PGROUNDDOWN(faultAddr), PGSIZE, (uint64)physAddr, p->mmr[i].prot | PTE_U) < 0){
+            panic("could not allocate");
+          }
+        }
+      }
+    }
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {
@@ -81,17 +105,15 @@ usertrap(void)
     yield();
   }
 
-  // if(p->timeslice == 0) { // Check when timeslice is used up
-  //   p->tsticks++; // Update time ticks
-  //   yield(); 
-  // }
+  if(p->timeslice == 0) { // Check when timeslice is used up
+    p->tsticks++; // Update time ticks
+    yield(); 
+  }
 
   usertrapret();
 }
 
-//
 // return to user space
-//
 void
 usertrapret(void)
 {
