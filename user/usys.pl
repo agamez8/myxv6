@@ -41,3 +41,7 @@ entry("wait2"); # added for lab 2
 entry("freepmem"); # added for lab 3
 entry("mmap"); # added for lab 3
 entry("munmap"); # added for lab 3
+entry("sem_init"); # lab4
+entry("sem_destroy"); # lab4
+entry("sem_wait"); # lab4
+entry("sem_post"); # lab4

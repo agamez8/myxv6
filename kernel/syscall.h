@@ -25,3 +25,7 @@
 #define SYS_freepmem 24 // added for lab 3
 #define SYS_mmap   25
 #define SYS_munmap 26
+#define SYS_sem_init 27 // lab4
+#define SYS_sem_destroy 28 // lab4
+#define SYS_sem_wait 29 // lab4
+#define SYS_sem_post 30 // lab4

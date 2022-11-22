@@ -125,3 +125,30 @@ sys_freepmem(void)
 {
   return kfreepagecount();
 }
+
+/*
+* lab 4 helper functions
+*/
+uint64 
+sem_init(void)
+{
+  return 0;
+}
+
+uint64 
+sem_destroy(void)
+{
+  return 0;
+}
+
+uint64 
+sem_wait(void)
+{
+  return 0;
+}
+
+uint64 
+sem_post(void)
+{
+  return 0;
+}
