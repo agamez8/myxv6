@@ -31,6 +31,88 @@ trapinithart(void)
 
 // handle an interrupt, exception, or system call from user space.
 // called from trampoline.S
+// void
+// usertrap(void)
+// {
+//   int which_dev = 0;
+
+//   if((r_sstatus() & SSTATUS_SPP) != 0)
+//     panic("usertrap: not from user mode");
+
+//   // send interrupts and exceptions to kerneltrap(),
+//   // since we're now in the kernel.
+//   w_stvec((uint64)kernelvec);
+
+//   struct proc *p = myproc();
+  
+//   // save user program counter.
+//   p->trapframe->epc = r_sepc();
+  
+//   if(r_scause() == 8){
+//     // system call
+
+//     if(p->killed)
+//       exit(-1);
+
+//     // sepc points to the ecall instruction,
+//     // but we want to return to the next instruction.
+//     p->trapframe->epc += 4;
+
+//     // an interrupt will change sstatus &c registers,
+//     // so don't enable until done with those registers.
+//     intr_on();
+
+//     syscall();
+//   } 
+//   else if(r_scause() == 13 || r_scause() == 15){
+//     int faultAddr = r_stval();
+//     int i;
+
+//     for(i = 0; i < MAX_MMR; i++){
+//       if((faultAddr >= p->mmr[i].addr) && (faultAddr < (p->mmr[i].addr + p->mmr[i].length))){
+//         if (r_scause() == 13 && (p->mmr[i].prot & PTE_R)){
+//           void *physAddr = kalloc();
+//           memset(physAddr, 0, PGSIZE);
+
+//           if (mappages(p->pagetable, PGROUNDDOWN(faultAddr), PGSIZE, (uint64)physAddr, p->mmr[i].prot | PTE_U) < 0){
+//             panic("could not allocate");
+//           } 
+//         }else if (r_scause() == 15 && (p->mmr[i].prot && PTE_W)) {
+//           void *physAddr = kalloc();
+//           memset(physAddr, 0, PGSIZE);
+
+//           if (mappages(p->pagetable, PGROUNDDOWN(faultAddr), PGSIZE, (uint64)physAddr, p->mmr[i].prot | PTE_U) < 0){
+//             panic("could not allocate");
+//           }
+//         }
+//       }
+//     }
+//   } else if((which_dev = devintr()) != 0){
+//     // ok
+//   } else {
+//     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
+//     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
+//     p->killed = 1;
+//   }
+
+//   if(p->killed)
+//     exit(-1);
+
+//   // give up the CPU if this is a timer interrupt.
+//   if(which_dev == 2) {
+//     p->cputime++; // Increment CPU when timer interrupt occurs in user mode
+//     p->tsticks++; // Update tsticks for every timer interrupt
+//     yield();
+//   }
+
+//   if(p->timeslice == 0) { // Check when timeslice is used up
+//     p->tsticks++; // Update time ticks
+//     yield(); 
+//   }
+
+//   usertrapret();
+// }
+
 void
 usertrap(void)
 {
@@ -63,37 +145,65 @@ usertrap(void)
     intr_on();
 
     syscall();
-  } 
-  else if(r_scause() == 13 || r_scause() == 15){
-    int faultAddr = r_stval();
-    int i;
-
-    for(i = 0; i < MAX_MMR; i++){
-      if((faultAddr >= p->mmr[i].addr) && (faultAddr < (p->mmr[i].addr + p->mmr[i].length))){
-        if (r_scause() == 13 && (p->mmr[i].prot & PTE_R)){
-          void *physAddr = kalloc();
-          memset(physAddr, 0, PGSIZE);
-
-          if (mappages(p->pagetable, PGROUNDDOWN(faultAddr), PGSIZE, (uint64)physAddr, p->mmr[i].prot | PTE_U) < 0){
-            panic("could not allocate");
-          } 
-        }else if (r_scause() == 15 && (p->mmr[i].prot && PTE_W)) {
-          void *physAddr = kalloc();
-          memset(physAddr, 0, PGSIZE);
-
-          if (mappages(p->pagetable, PGROUNDDOWN(faultAddr), PGSIZE, (uint64)physAddr, p->mmr[i].prot | PTE_U) < 0){
-            panic("could not allocate");
-          }
-        }
-      }
-    }
-  } else if((which_dev = devintr()) != 0){
+  } else if((which_dev = devintr()) != 0) {
     // ok
-  } else {
-    printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
-    printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
-    p->killed = 1;
+  } else if(r_scause() ==13 || r_scause() ==15) {
+
+    uint64 faultAddr = r_stval();
+    
+    int i;
+    for(i = 0; i < MAX_MMR; i++){
+        if((p->mmr[i].valid) && (faultAddr >= p->mmr[i].addr) && faultAddr < (p->mmr[i].addr + p->mmr[i].length)) {
+    
+          if (r_scause() == 13){
+            if (!(p->mmr[i].prot & PTE_R)) {
+              p->killed=1;
+            } else {
+              uint64 physAddr = (uint64)kalloc();//zero after 
+              uint64 startAddr = PGROUNDDOWN(faultAddr);
+              mappages(p->pagetable,startAddr,PGSIZE,physAddr,p->mmr[i].prot | PTE_U);
+            }
+          }
+
+          if(r_scause() == 15){
+              if (!(p->mmr[i].prot & PTE_W)){
+                p->killed=1;
+              } else {
+                uint64 physAddr = (uint64)kalloc();
+                uint64 startAddr = PGROUNDDOWN(faultAddr);
+                mappages(p->pagetable,startAddr,PGSIZE,physAddr,p->mmr[i].prot | PTE_U);
+              }
+          }
+          break;
+        }
+    }
+
+    if (i==MAX_MMR){
+        p->killed=1;
+    }
+
+
+    } else {
+      printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
+      printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
+      p->killed = 1;
   }
+
+  // // give up the CPU if this is a timer interrupt.
+  // if(which_dev == 2){
+  //   p->cputime++; // Increment CPU when timer interrupt occurs in user mode
+  //   p->tsticks++; // Update tsticks for every timer interrupt
+    
+  //   if( timeslice(p->priority) <= p->tsticks){
+  //     if(p->priority > LOW){
+  //         p->priority--;
+  //     }
+  //   }   
+    
+  //   yield();
+    
+  //  }
+  // usertrapret();
 
   if(p->killed)
     exit(-1);
