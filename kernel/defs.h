@@ -203,5 +203,10 @@ int 			kfreepagecount(void); // added for lab 3
 int 			mmap(void); // lab 3
 int 			munmap(uint64, uint64); // lab 3
 
+// semaphore.c
+void 			seminit(void);
+void 			semalloc(void);
+void 			semdealloc(void);
+
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

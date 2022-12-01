@@ -130,25 +130,25 @@ sys_freepmem(void)
 * lab 4 helper functions
 */
 uint64 
-sem_init(void)
+sys_sem_init(void)
 {
   return 0;
 }
 
 uint64 
-sem_destroy(void)
+sys_sem_destroy(void)
 {
   return 0;
 }
 
 uint64 
-sem_wait(void)
+sys_sem_wait(void)
 {
   return 0;
 }
 
 uint64 
-sem_post(void)
+sys_sem_post(void)
 {
   return 0;
 }

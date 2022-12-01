@@ -50,7 +50,7 @@ int memcmp(const void *, const void *, uint);
 void *memcpy(void *, const void *, uint);
 
 // lab4
-int sem_init(sem_t sem*, int, uint);
-int sem_destroy(sem_t sem*);
-int sem_wait(sem_t sem*);
-int sem_post(sem_t sem*);
+int sem_init(sem_t sem, int, uint);
+int sem_destroy(sem_t sem);
+int sem_wait(sem_t sem);
+int sem_post(sem_t sem);
