@@ -141,6 +141,7 @@ UPROGS=\
 	$U/_time\
 	$U/_free\
 	$U/_private\
+	$U/_prodcons-sem\
 # 	$U/_mmap\
 # 	$U/_munmap\
 	

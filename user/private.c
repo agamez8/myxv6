@@ -4,6 +4,7 @@
 
 #define BSIZE 10
 #define MAX 10
+#define NULL 0
 
 typedef struct {
     int buf[BSIZE];
@@ -56,7 +57,7 @@ main(int argc, char *argv[])
 
     printf("total = %d\n", buffer->total);
 
-    //munmap(buffer, sizeof(buffer_t));
+    munmap(buffer, sizeof(buffer_t));
 
     exit(0);
 }

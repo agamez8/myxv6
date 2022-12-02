@@ -63,32 +63,43 @@ usertrap(void)
     intr_on();
 
     syscall();
-  } 
-  else if(r_scause() == 13 || r_scause() == 15){
-    int faultAddr = r_stval();
-    int i;
-
-    for(i = 0; i < MAX_MMR; i++){
-      if((faultAddr >= p->mmr[i].addr) && (faultAddr < (p->mmr[i].addr + p->mmr[i].length))){
-        if (r_scause() == 13 && (p->mmr[i].prot & PTE_R)){
-          void *physAddr = kalloc();
-          memset(physAddr, 0, PGSIZE);
-
-          if (mappages(p->pagetable, PGROUNDDOWN(faultAddr), PGSIZE, (uint64)physAddr, p->mmr[i].prot | PTE_U) < 0){
-            panic("could not allocate");
-          } 
-        }else if (r_scause() == 15 && (p->mmr[i].prot && PTE_W)) {
-          void *physAddr = kalloc();
-          memset(physAddr, 0, PGSIZE);
-
-          if (mappages(p->pagetable, PGROUNDDOWN(faultAddr), PGSIZE, (uint64)physAddr, p->mmr[i].prot | PTE_U) < 0){
-            panic("could not allocate");
-          }
-        }
-      }
-    }
-  } else if((which_dev = devintr()) != 0){
+  } else if((which_dev = devintr()) != 0) {
     // ok
+  } else if(r_scause() ==13 || r_scause() ==15) {
+
+    uint64 faultAddr = r_stval();
+    
+    int i;
+    for(i = 0; i < MAX_MMR; i++){
+        if((p->mmr[i].valid) && (faultAddr >= p->mmr[i].addr) && faultAddr < (p->mmr[i].addr + p->mmr[i].length)) {
+    
+          if (r_scause() == 13){
+            if (!(p->mmr[i].prot & PTE_R)) {
+              p->killed=1;
+            } else {
+              uint64 physAddr = (uint64)kalloc();//zero after 
+              uint64 startAddr = PGROUNDDOWN(faultAddr);
+              mappages(p->pagetable,startAddr,PGSIZE,physAddr,p->mmr[i].prot | PTE_U);
+            }
+          }
+
+          if(r_scause() == 15){
+              if (!(p->mmr[i].prot & PTE_W)) {
+                p->killed=1;
+              } else {
+                uint64 physAddr = (uint64)kalloc();
+                uint64 startAddr = PGROUNDDOWN(faultAddr);
+                mappages(p->pagetable,startAddr,PGSIZE,physAddr,p->mmr[i].prot | PTE_U);
+              }
+          }
+          break;
+        }
+    }
+
+    if (i==MAX_MMR){
+        p->killed=1;
+    }
+
   } else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
@@ -109,7 +120,6 @@ usertrap(void)
     p->tsticks++; // Update time ticks
     yield(); 
   }
-
   usertrapret();
 }
 

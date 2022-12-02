@@ -132,23 +132,127 @@ sys_freepmem(void)
 uint64 
 sys_sem_init(void)
 {
+  uint64 addr;
+  int value;
+  int pshared;
+  
+  if (argaddr(0, &addr) < 0){
+    return -1;
+  }
+  if (argint(1, &pshared) < 0){
+    return -1;
+  }
+  if (argint(2, &value) < 0){
+    return -1;
+  }
+
+  int sem_index = semalloc();
+  if (sem_index < 0){
+    return -1;
+  }
+
+  struct proc *p = myproc();
+  semtable.sem[sem_index].count = value;
+  
+  if (copyout(p->pagetable, addr, (char *)&sem_index, sizeof(int)) < 0){
+    semdealloc(sem_index);
+    return -1;
+  }
+
   return 0;
 }
 
 uint64 
 sys_sem_destroy(void)
 {
+  uint64 addr;
+
+  if (argaddr(0, &addr) < 0){ // argument to pointer check address
+    return -1;
+  }
+
+  int sem_index;
+  struct proc *p = myproc();
+
+  if (copyin(p->pagetable, (char *)&sem_index, addr, sizeof(int)) < 0){
+    return -1;
+  }
+
+  acquire(&semtable.sem[sem_index].lock);
+
+  // validate address
+  if (semtable.sem[sem_index].valid != 1){
+    release(&semtable.sem[sem_index].lock);
+    return -1;
+  }
+
+  semdealloc(sem_index);
+  release(&semtable.sem[sem_index].lock);
+
   return 0;
 }
 
 uint64 
 sys_sem_wait(void)
 {
+  uint64 addr;
+
+  if (argaddr(0, &addr) < 0){ // argument to pointer check address
+    return -1;
+  }
+
+  int sem_index;
+  struct proc *p = myproc();
+
+  if (copyin(p->pagetable, (char *)&sem_index, addr, sizeof(int)) < 0){
+    return -1;
+  }
+
+  acquire(&semtable.sem[sem_index].lock);
+
+  // validate address
+  if (semtable.sem[sem_index].valid != 1){
+    release(&semtable.sem[sem_index].lock);
+    return -1;
+  }
+
+  while (semtable.sem[sem_index].count == 0){
+    sleep((void *)&semtable.sem[sem_index], &semtable.sem[sem_index].lock);
+  }
+
+  semtable.sem[sem_index].count -= 1;
+  release(&semtable.sem[sem_index].lock);
+
   return 0;
 }
 
 uint64 
 sys_sem_post(void)
 {
+  uint64 addr;
+
+  if (argaddr(0, &addr) < 0){ // argument to pointer check address
+    return -1;
+  }
+
+  int sem_index;
+  struct proc *p = myproc();
+
+  if (copyin(p->pagetable, (char *)&sem_index, addr, sizeof(int)) < 0){
+    return -1;
+  }
+
+  acquire(&semtable.sem[sem_index].lock);
+
+  // validate address
+  if (semtable.sem[sem_index].valid != 1){
+    release(&semtable.sem[sem_index].lock);
+    return -1;
+  } else { 
+    semtable.sem[sem_index].count += 1;
+    wakeup((void *)&semtable.sem[sem_index]);
+    release(&semtable.sem[sem_index].lock);
+  }
+
   return 0;
 }
