@@ -2,7 +2,7 @@
 #include "user/user.h"
 #include "kernel/stat.h"
 
-// #define NULL 0
+#define NULL 0
 #define BSIZE 10
 #define MAX 10
 
